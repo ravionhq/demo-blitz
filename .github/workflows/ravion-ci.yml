@@ -1,0 +1,79 @@
+name: "CI (Ravion)"
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: "Ravion / lint"
+    runs-on: ravion/ee=github-actions-other/type=sandbox/cpu=2/memory=8/disk_cache=auto/interruptible=true/id=${{ github.run_id }}-ravion-ci-lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 7.33.7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          HUSKY: "0"
+      - run: pnpm lint
+
+  test:
+    name: "Ravion / test"
+    runs-on: ravion/ee=github-actions-other/type=sandbox/cpu=4/memory=16/disk=20/disk_cache=auto/interruptible=false/id=${{ github.run_id }}-ravion-ci-test
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: demo_blitz_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d demo_blitz_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/demo_blitz_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 7.33.7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          HUSKY: "0"
+      - run: pnpm exec blitz codegen
+      - run: pnpm exec blitz prisma migrate deploy
+      - run: pnpm test
+
+  build:
+    name: "Ravion / build"
+    runs-on: ravion/ee=github-actions-other/type=sandbox/cpu=4/memory=16/disk=20/disk_cache=auto/interruptible=true/id=${{ github.run_id }}-ravion-ci-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 7.33.7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 16
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          HUSKY: "0"
+      - run: pnpm exec blitz codegen
+      - run: pnpm build
