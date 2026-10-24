@@ -9,7 +9,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-24.04
+    runs-on: ravion/ee=github-actions-other/type=sandbox/cpu=auto/memory=auto/disk=auto/disk_cache=auto/interruptible=true/id=${{ github.run_id }}-ci-lint
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,7 +26,7 @@ jobs:
       - run: pnpm lint
 
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ravion/ee=github-actions-other/type=sandbox/cpu=4/memory=16/disk=20/disk_cache=auto/interruptible=false/id=${{ github.run_id }}-ci-test
     services:
       postgres:
         image: postgres:14
@@ -61,7 +61,7 @@ jobs:
       - run: pnpm test
 
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ravion/ee=github-actions-other/type=sandbox/cpu=auto/memory=auto/disk=auto/disk_cache=auto/interruptible=true/id=${{ github.run_id }}-ci-build
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
